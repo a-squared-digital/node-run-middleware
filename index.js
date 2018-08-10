@@ -19,7 +19,7 @@ module.exports = function(app) {
 
   app.runMiddleware = function(path, options, callback) {
     if (callback) callback = _.once(callback);
-    if (typeof options == "function") {
+    if (typeof options === "function") {
       callback = options;
       options = null;
     }
@@ -29,7 +29,7 @@ module.exports = function(app) {
     if (options.original_req) {
       new_req = options.original_req;
       for (var i in options) {
-        if (i == "original_req") continue;
+        if (i === "original_req") continue;
         new_req[i] = options[i];
       }
     } else {
@@ -68,7 +68,7 @@ function createRes(callback) {
   var headers = {};
   var code = 200;
   res.set = res.header = (x, y) => {
-    if (arguments.length === 2) {
+    if (arguments.length ==== 2) {
       res.setHeader(x, y);
     } else {
       for (var key in x) {
