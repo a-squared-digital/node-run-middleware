@@ -68,8 +68,8 @@ function createRes(callback) {
 
     var headers = {}
     var code = 200
-    res.set = res.header = function (x, y) {
-        if (arguments.length === 2) {
+    res.set = res.header = (x, y)=> {
+        if (y) {
             res.setHeader(x, y)
         } else {
             for (var key in x) {
