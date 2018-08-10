@@ -3,7 +3,6 @@ var _ = require("lodash")
 var request = require("express/lib/request")
 
 module.exports = function (app) {
-    // Add middleware to app to add req.runMiddleware
     app.use((req, res, next) => {
         req.runMiddleware = (path, options, callback) => {
             if (_.isFunction(options)) {
@@ -16,24 +15,21 @@ module.exports = function (app) {
         }
         next()
     })
+    if (app.runMiddleware) return // Do not able to add us twice
 
-    // Check to make sure app.runMiddleware hasn't already been added
-    if (app.runMiddleware) return
-
-    // Add runMiddleware to the app object
     app.runMiddleware = function (path, options, callback) {
         if (callback) callback = _.once(callback)
-        if (typeof options === "function") {
+        if (typeof options == "function") {
             callback = options
             options = null
         }
         options = options || {}
         options.url = path
-        let new_req, new_res
+        var new_req, new_res
         if (options.original_req) {
             new_req = options.original_req
-            for (let i in options) {
-                if (i === "original_req") continue
+            for (var i in options) {
+                if (i == "original_req") continue
                 new_req[i] = options[i]
             }
         } else {
@@ -42,17 +38,13 @@ module.exports = function (app) {
         new_res = createRes(callback)
         app(new_req, new_res)
     }
+
+    /* end - APP.runMiddleware*/
 }
 
-/**
- * Create synthetic request object
- * @param {string} path
- * @param {Object} options
- * @returns {Object} request
- */
 function createReq(path, options) {
     if (!options) options = {}
-    const req = _.extend(
+    var req = _.extend(
         {
             method: "GET",
             host: "",
@@ -64,23 +56,45 @@ function createReq(path, options) {
         options
     )
     req.method = req.method.toUpperCase()
+    // req.connection=_req.connection
     return req
 }
 
-/**
- * Create synthetic response object
- * @param {Function} callback
- * @returns {Object} response
- */
 function createRes(callback) {
-    const res = {
+    var res = {
         _removedHeader: {},
     }
-    const headers = {}
-    let code = 200
-    res.set = res.header = (header, value) => {
-        headers[header] = value
+    // res=_.extend(res,require('express/lib/response'));
+
+    var headers = {}
+    var code = 200
+    res.set = res.header = function (x, y) {
+        if (arguments.length === 2) {
+            res.setHeader(x, y)
+        } else {
+            for (var key in x) {
+                res.setHeader(key, x[key])
+            }
+        }
         return res
+    }
+    res.setHeader = (x, y) => {
+        headers[x] = y
+        return res
+    }
+    // res.get=(x) => {
+    // 	return headers[x]
+    // }
+    res.redirect = function (_code, url) {
+        if (!_.isNumber(_code)) {
+            code = 301
+            url = _code
+        } else {
+            code = _code
+        }
+        res.setHeader("Location", url)
+        res.end()
+        // callback(code,url)
     }
     res.status = function (number) {
         code = number
@@ -88,6 +102,9 @@ function createRes(callback) {
     }
     res.end = res.send = res.write = function (data) {
         if (callback) callback(code, data, headers)
+        // else if (!options.quiet){
+        //     _res.send(data)
+        // }
     }
     return res
 }
