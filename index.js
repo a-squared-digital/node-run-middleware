@@ -1,5 +1,7 @@
 var _ = require("lodash")
 
+var request = require("express/lib/request")
+
 module.exports = function (app) {
     // Add middleware to app to add req.runMiddleware
     app.use((req, res, next) => {
